@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<keyboard bottom_row="true">
+<keyboard bottom_row="false">
   <row>
     <key key0="\@"/>
     <key key0="\#"/>
@@ -23,5 +23,11 @@
     <key key0=","/>
     <key key0="!"/>
     <key key0="?"/>
+  </row>
+  <row height="0.95">
+    <key width="1.6" role="action" key0="ctrl"/>
+    <key width="1.6" role="action" key0="switch_text"/>
+    <key width="5.2" role="space_bar" key0="space"/>
+    <key width="1.6" role="action" key0="enter"/>
   </row>
 </keyboard>

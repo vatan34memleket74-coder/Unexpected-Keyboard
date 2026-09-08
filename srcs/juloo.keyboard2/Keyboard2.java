@@ -447,6 +447,14 @@ public class Keyboard2 extends InputMethodService
           setSpecialLayout(loadLayout(R.xml.ranges));
           break;
 
+          case SWITCH_RANGES_NEXT:
+    setSpecialLayout(loadLayout(R.xml.ranges2));
+    break;
+
+case SWITCH_RANGES_PREVIOUS:
+    setSpecialLayout(loadLayout(R.xml.ranges));
+    break;
+
         case SWITCH_EMOJI:
           if (_emojiPane == null)
             _emojiPane = (ViewGroup)inflate_view(R.layout.emoji_pane);

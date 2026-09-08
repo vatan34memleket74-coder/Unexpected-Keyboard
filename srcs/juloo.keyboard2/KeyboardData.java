@@ -568,6 +568,7 @@ public final class KeyboardData
     {
       Normal,
       Action, // Generally Shift, Delete and keys on the bottom row
+      Enter, // The enter/action key specifically, themed separately from Action
       Space_bar,
       Suggestion;
 
@@ -576,6 +577,7 @@ public final class KeyboardData
         switch (str)
         {
           case "action": return Action;
+          case "enter": return Enter;
           case "space_bar": return Space_bar;
           case "suggestion": return Suggestion;
           default: case "normal": return Normal;

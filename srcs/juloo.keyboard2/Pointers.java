@@ -449,6 +449,20 @@ public final class Pointers implements Handler.Callback
       _handler.onPointerDown(kv, true);
       return;
     }
+    // Long press reveals the key's up-left swipe value (key1), like a
+    // long-press-for-accent behaviour (e.g. Gboard). Most layouts put the
+    // single most useful alternate (accented letter, symbol, etc.) there.
+    if (ptr.key != null && ptr.key.keys.length > 1 && ptr.key.keys[1] != null)
+    {
+      KeyValue alt = _handler.modifyKey(ptr.key.keys[1], ptr.modifiers);
+      if (alt != null && !alt.equals(ptr.value)
+          && !alt.hasFlagsAny(KeyValue.FLAG_SPECIAL))
+      {
+        ptr.value = alt;
+        _handler.onPointerDown(alt, true);
+        return;
+      }
+    }
     // Special keys
     if (kv.hasFlagsAny(KeyValue.FLAG_SPECIAL))
       return;

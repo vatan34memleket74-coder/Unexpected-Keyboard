@@ -443,9 +443,9 @@ public class Keyboard2 extends InputMethodService
           setSpecialLayout(loadNumericLayout());
           break;
 
-        case SWITCH_RANGES:
-          setSpecialLayout(loadLayout(R.xml.ranges));
-          break;
+        case SWITCH_RANGES_NEXT:
+    setSpecialLayout(loadLayout(R.xml.ranges2));
+    break;
 
         case SWITCH_EMOJI:
           if (_emojiPane == null)

@@ -23,7 +23,7 @@
   <row height="0.95">
     <key width="1.6" role="action" key0="switch_text"/>
     <key width="5.2" role="space_bar" key0="space"/>
-    <key width="1.6" role="action" key0="switch_ranges_next"/>
+   <key width="1.6" role="action" key0="switch_ranges_next"/>
   </row>
 
 </keyboard>

@@ -52,6 +52,7 @@
     <string name="pref_theme_e_dark">Koyu</string>
     <string name="pref_theme_e_light">Aydınlık</string>
     <string name="pref_theme_e_black">Siyah</string>
+    <string name="pref_theme_e_gboardblack">Gboard Siyah</string>
     <string name="pref_theme_e_altblack">Alternatif Siyah</string>
     <string name="pref_theme_e_white">Beyaz</string>
     <string name="pref_theme_e_epaper">E-Kağıt</string>

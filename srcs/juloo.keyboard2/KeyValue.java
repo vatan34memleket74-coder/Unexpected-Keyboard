@@ -10,9 +10,6 @@ public final class KeyValue implements Comparable<KeyValue>
     CONFIG,
     SWITCH_TEXT,
     SWITCH_NUMERIC,
-    SWITCH_RANGES,
-    SWITCH_RANGES_NEXT,
-    SWITCH_RANGES_PREVIOUS,
     SWITCH_EMOJI,
     SWITCH_BACK_EMOJI,
     SWITCH_CLIPBOARD,
@@ -494,7 +491,10 @@ public final class KeyValue implements Comparable<KeyValue>
 
   public static KeyValue makeActionKey(String symbol)
   {
-    return eventKey(symbol, Event.ACTION, FLAG_SMALLER_FONT);
+    // Always show the plain enter arrow icon instead of the action's text
+    // label (e.g. "Tamam", "Ara", "Git"). The actual action performed is
+    // unaffected as it only depends on [EditorConfig.actionId].
+    return eventKey(0xE00E, Event.ACTION, 0);
   }
 
   /** Make a key that types a string. A char key is returned for a string of
@@ -646,34 +646,6 @@ public final class KeyValue implements Comparable<KeyValue>
       case "config": return CONFIG;
       case "switch_text": return eventKey("ABC", Event.SWITCH_TEXT, FLAG_SMALLER_FONT);
       case "switch_numeric": return eventKey("123+", Event.SWITCH_NUMERIC, FLAG_SMALLER_FONT);
-      case "range0": return makeMacro("0", new KeyValue[]{makeStringKey("0-1, 6")}, 0);
-case "range1": return makeMacro("1", new KeyValue[]{makeStringKey("1-2, 12")}, 0);
-case "range2": return makeMacro("2", new KeyValue[]{makeStringKey("2-3, 18")}, 0);
-case "range3": return makeMacro("3", new KeyValue[]{makeStringKey("3-4, 24")}, 0);
-case "range4": return makeMacro("4", new KeyValue[]{makeStringKey("4-5, 30")}, 0);
-case "range5": return makeMacro("5", new KeyValue[]{makeStringKey("5-6, 36")}, 0);
-case "range6": return makeMacro("6", new KeyValue[]{makeStringKey("6-7, 42")}, 0);
-case "range7": return makeMacro("7", new KeyValue[]{makeStringKey("7-8, 48")}, 0);
-case "range8": return makeMacro("8", new KeyValue[]{makeStringKey("8-9, 6")}, 0);
-case "range9": return makeMacro("9", new KeyValue[]{makeStringKey("9-10, 12")}, 0);
-case "range10": return makeMacro("10", new KeyValue[]{makeStringKey("10-11, 18")}, 0);
-case "range11": return makeMacro("11", new KeyValue[]{makeStringKey("11-12, 24")}, 0);
-
-case "range12": return makeMacro("12", new KeyValue[]{makeStringKey("12-13, 30")}, 0);
-case "range13": return makeMacro("13", new KeyValue[]{makeStringKey("13-14, 36")}, 0);
-case "range14": return makeMacro("14", new KeyValue[]{makeStringKey("14-15, 42")}, 0);
-case "range15": return makeMacro("15", new KeyValue[]{makeStringKey("15-16, 48")}, 0);
-case "range16": return makeMacro("16", new KeyValue[]{makeStringKey("16-17, 6")}, 0);
-case "range17": return makeMacro("17", new KeyValue[]{makeStringKey("17-18, 12")}, 0);
-case "range18": return makeMacro("18", new KeyValue[]{makeStringKey("18-19, 18")}, 0);
-case "range19": return makeMacro("19", new KeyValue[]{makeStringKey("19-20, 24")}, 0);
-case "range20": return makeMacro("20", new KeyValue[]{makeStringKey("20-21, 30")}, 0);
-case "range21": return makeMacro("21", new KeyValue[]{makeStringKey("21-22, 36")}, 0);
-case "range22": return makeMacro("22", new KeyValue[]{makeStringKey("22-23, 42")}, 0);
-case "range23": return makeMacro("23", new KeyValue[]{makeStringKey("23-24, 48")}, 0);
-      case "switch_ranges": return eventKey("0-24", Event.SWITCH_RANGES, FLAG_SMALLER_FONT);
-      case "switch_ranges_next": return eventKey("→", Event.SWITCH_RANGES_NEXT, FLAG_SMALLER_FONT);
-      case "switch_ranges_previous": return eventKey("←", Event.SWITCH_RANGES_PREVIOUS, FLAG_SMALLER_FONT);
       case "switch_emoji": return eventKey(0xE001, Event.SWITCH_EMOJI, FLAG_SMALLER_FONT);
       case "switch_back_emoji": return eventKey("ABC", Event.SWITCH_BACK_EMOJI, 0);
       case "switch_clipboard": return eventKey(0xE017, Event.SWITCH_CLIPBOARD, 0);

@@ -15,6 +15,7 @@ public class Theme
   public final int colorKey;
   public final int colorKeyActivated;
   public final int colorKeyAction;
+  public final int colorKeyEnter;
   public final int colorKeySpaceBar;
 
   // Optional keyboard background gradient
@@ -55,6 +56,7 @@ public class Theme
     colorKey = s.getColor(R.styleable.keyboard_colorKey, 0);
     colorKeyActivated = s.getColor(R.styleable.keyboard_colorKeyActivated, 0);
     colorKeyAction = s.getColor(R.styleable.keyboard_colorKeyAction, colorKey);
+    colorKeyEnter = s.getColor(R.styleable.keyboard_colorKeyEnter, colorKeyAction);
     colorKeySpaceBar = s.getColor(R.styleable.keyboard_colorKeySpaceBar, colorKey);
     // colorKeyboard = s.getColor(R.styleable.keyboard_colorKeyboard, 0);
     colorNavBar = s.getColor(R.styleable.keyboard_navigationBarColor, 0);
@@ -121,6 +123,7 @@ public class Theme
     public final Key key;
     public final Key key_activated;
     public final Key key_action;
+    public final Key key_enter;
     public final Key key_space_bar;
     public final Key key_suggestion;
 
@@ -139,6 +142,7 @@ public class Theme
       keyboard_background_paint = init_keyboard_background_paint(theme, margin_top + row_height * layout.keysHeight + config.margin_bottom);
       key = new Key(theme, config, keyWidth, false, KeyboardData.Key.Role.Normal);
       key_action = new Key(theme, config, keyWidth, false, KeyboardData.Key.Role.Action);
+      key_enter = new Key(theme, config, keyWidth, false, KeyboardData.Key.Role.Enter);
       key_space_bar = new Key(theme, config, keyWidth, false, KeyboardData.Key.Role.Space_bar);
       key_activated = new Key(theme, config, keyWidth, true, KeyboardData.Key.Role.Normal);
       key_suggestion = new Key(theme, config, keyWidth, false, KeyboardData.Key.Role.Suggestion);
@@ -195,6 +199,10 @@ public class Theme
           {
             case Action:
               bg_color = theme.colorKeyAction;
+              border_width = theme.keyBorderWidthAction;
+              break;
+            case Enter:
+              bg_color = theme.colorKeyEnter;
               border_width = theme.keyBorderWidthAction;
               break;
             case Space_bar:

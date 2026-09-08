@@ -133,10 +133,10 @@
   <style name="GboardBlack" parent="BaseTheme">
     <item name="android:isLightTheme">false</item>
     <item name="colorKeyboard">#000000</item>
-    <item name="colorKey">#000000</item>
-    <item name="colorKeyActivated">#2b2b2b</item>
-    <item name="colorKeyAction">#000000</item>
-    <item name="colorKeySpaceBar">#000000</item>
+    <item name="colorKey">#2e2e2e</item>
+    <item name="colorKeyActivated">#4a4a4a</item>
+    <item name="colorKeyAction">#2e2e2e</item>
+    <item name="colorKeySpaceBar">#2e2e2e</item>
     <item name="keyBorderWidth">0dp</item>
     <item name="keyBorderWidthActivated">0dp</item>
     <item name="keyBorderWidthAction">0dp</item>
@@ -145,8 +145,8 @@
     <item name="colorLabelActivated">#8ab4f8</item>
     <item name="colorLabelLocked">#8ab4f8</item>
     <item name="colorSubLabel">#9aa0a6</item>
-    <item name="keyBorderRadius">0dp</item>
-    <item name="emoji_button_bg">#000000</item>
+    <item name="keyBorderRadius">10dp</item>
+    <item name="emoji_button_bg">#2e2e2e</item>
     <item name="emoji_color">#ffffff</item>
   </style>
   <style name="White" parent="BaseTheme">

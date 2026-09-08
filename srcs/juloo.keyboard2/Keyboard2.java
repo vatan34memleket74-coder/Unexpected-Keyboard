@@ -440,6 +440,7 @@ public class Keyboard2 extends InputMethodService
           break;
 
         case SWITCH_NUMERIC:
+         case SWITCH_RANGES:
           setSpecialLayout(loadNumericLayout());
           break;
 

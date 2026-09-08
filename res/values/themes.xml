@@ -12,6 +12,7 @@
     <attr name="colorKeyActivated" format="color"/>
     <!-- Adjust the lightness of keys depending on their role. -->
     <attr name="colorKeyAction" format="color"/>
+    <attr name="colorKeyEnter" format="color"/>
     <attr name="colorKeySpaceBar" format="color"/>
     <!-- Label colors -->
     <attr name="colorLabel" format="color"/>
@@ -136,6 +137,7 @@
     <item name="colorKey">#2e2e2e</item>
     <item name="colorKeyActivated">#4a4a4a</item>
     <item name="colorKeyAction">#2e2e2e</item>
+    <item name="colorKeyEnter">#e05a4e</item>
     <item name="colorKeySpaceBar">#2e2e2e</item>
     <item name="keyBorderWidth">0dp</item>
     <item name="keyBorderWidthActivated">0dp</item>

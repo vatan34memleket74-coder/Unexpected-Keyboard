@@ -440,8 +440,11 @@ public class Keyboard2 extends InputMethodService
           break;
 
         case SWITCH_NUMERIC:
-         case SWITCH_RANGES:
           setSpecialLayout(loadNumericLayout());
+          break;
+
+        case SWITCH_RANGES:
+          setSpecialLayout(loadLayout(R.xml.ranges));
           break;
 
         case SWITCH_EMOJI:

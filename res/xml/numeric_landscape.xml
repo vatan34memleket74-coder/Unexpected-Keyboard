@@ -28,6 +28,6 @@
     <key width="1.6" role="action" key0="ctrl"/>
     <key width="1.6" role="action" key0="switch_text"/>
     <key width="5.2" role="space_bar" key0="space"/>
-    <key width="1.6" role="action" key0="enter"/>
+    <key width="1.6" role="enter" key0="enter"/>
   </row>
 </keyboard>

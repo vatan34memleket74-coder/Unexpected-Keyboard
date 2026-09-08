@@ -11,6 +11,8 @@ public final class KeyValue implements Comparable<KeyValue>
     SWITCH_TEXT,
     SWITCH_NUMERIC,
     SWITCH_RANGES,
+    SWITCH_RANGES_NEXT,
+    SWITCH_RANGES_PREVIOUS,
     SWITCH_EMOJI,
     SWITCH_BACK_EMOJI,
     SWITCH_CLIPBOARD,
@@ -645,6 +647,8 @@ public final class KeyValue implements Comparable<KeyValue>
       case "switch_text": return eventKey("ABC", Event.SWITCH_TEXT, FLAG_SMALLER_FONT);
       case "switch_numeric": return eventKey("123+", Event.SWITCH_NUMERIC, FLAG_SMALLER_FONT);
       case "switch_ranges": return eventKey("0-24", Event.SWITCH_RANGES, FLAG_SMALLER_FONT);
+      case "switch_ranges_next": return eventKey("→", Event.SWITCH_RANGES_NEXT, FLAG_SMALLER_FONT);
+      case "switch_ranges_previous": return eventKey("←", Event.SWITCH_RANGES_PREVIOUS, FLAG_SMALLER_FONT);
       case "switch_emoji": return eventKey(0xE001, Event.SWITCH_EMOJI, FLAG_SMALLER_FONT);
       case "switch_back_emoji": return eventKey("ABC", Event.SWITCH_BACK_EMOJI, 0);
       case "switch_clipboard": return eventKey(0xE017, Event.SWITCH_CLIPBOARD, 0);

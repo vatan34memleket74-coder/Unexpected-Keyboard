@@ -113,7 +113,7 @@ public class CandidatesView extends LinearLayout
   void set_sizes(Config config)
   {
     // Make the candidates view about as high as a keyboard row.
-    float row_height = config.keyboard_rows_height_pixels * (1 - config.key_vertical_margin) * 0.6f;
+    float row_height = config.keyboard_rows_height_pixels * (1 - config.key_vertical_margin) * 0.9f;
     ViewGroup.MarginLayoutParams p =
       (ViewGroup.MarginLayoutParams)getLayoutParams();
     p.height = (int)row_height;

@@ -2,28 +2,28 @@
 
 <keyboard bottom_row="false">
 
-    <row>
-        <key c="12-13, 30"/>
-        <key c="13-14, 36"/>
-        <key c="14-15, 42"/>
-        <key c="15-16, 48"/>
-        <key c="16-17, 6"/>
-        <key c="17-18, 12"/>
-    </row>
+  <row>
+    <key c="12:'12-13, 30'"/>
+    <key c="13:'13-14, 36'"/>
+    <key c="14:'14-15, 42'"/>
+    <key c="15:'15-16, 48'"/>
+    <key c="16:'16-17, 6'"/>
+    <key c="17:'17-18, 12'"/>
+  </row>
 
-    <row>
-        <key c="18-19, 18"/>
-        <key c="19-20, 24"/>
-        <key c="20-21, 30"/>
-        <key c="21-22, 36"/>
-        <key c="22-23, 42"/>
-        <key c="23-24, 48"/>
-    </row>
+  <row>
+    <key c="18:'18-19, 18'"/>
+    <key c="19:'19-20, 24'"/>
+    <key c="20:'20-21, 30'"/>
+    <key c="21:'21-22, 36'"/>
+    <key c="22:'22-23, 42'"/>
+    <key c="23:'23-24, 48'"/>
+  </row>
 
-    <row height="0.95">
-        <key width="1.7" role="action" key0="switch_ranges_previous"/>
-        <key width="6.6" role="action" key0="switch_ranges_previous"/>
-        <key width="1.7" role="action" key0="switch_numeric"/>
-    </row>
+  <row height="0.95">
+    <key width="1.6" role="action" key0="switch_text"/>
+    <key width="5.2" role="space_bar" key0="space"/>
+    <key width="1.6" role="action" key0="switch_numeric" w="switch_ranges_previous"/>
+  </row>
 
 </keyboard>

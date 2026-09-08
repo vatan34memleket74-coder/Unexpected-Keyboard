@@ -1,5 +1,4 @@
 package juloo.keyboard2;
-
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,7 +32,6 @@ import juloo.keyboard2.dict.SupportedDictionaries;
 import juloo.keyboard2.prefs.LayoutsPreference;
 import juloo.keyboard2.suggestions.CandidatesView;
 import juloo.keyboard2.suggestions.Suggestions;
-
 public class Keyboard2 extends InputMethodService
   implements SharedPreferences.OnSharedPreferenceChangeListener
 {
@@ -52,11 +50,8 @@ public class Keyboard2 extends InputMethodService
   private ViewGroup _emojiPane = null;
   private ViewGroup _clipboard_pane = null;
   private Handler _handler;
-
   private Config _config;
-
   private FoldStateTracker _foldStateTracker;
-
   /** Layout currently visible before it has been modified. */
   KeyboardData current_layout_unmodified()
   {
@@ -72,7 +67,6 @@ public class Keyboard2 extends InputMethodService
       layout = _localeTextLayout;
     return layout;
   }
-
   /** Layout currently visible. */
   KeyboardData current_layout()
   {
@@ -80,7 +74,6 @@ public class Keyboard2 extends InputMethodService
       return _currentSpecialLayout;
     return LayoutModifier.modify_layout(current_layout_unmodified());
   }
-
   void setTextLayout(int l)
   {
     _config.set_current_layout(l);
@@ -90,43 +83,36 @@ public class Keyboard2 extends InputMethodService
     refresh_candidates_view();
     _keyboard_layout_view.setKeyboard(current_layout());
   }
-
   void incrTextLayout(int delta)
   {
     int s = _config.layouts.size();
     setTextLayout((_config.get_current_layout() + delta + s) % s);
   }
-
   void setSpecialLayout(KeyboardData l)
   {
     _currentSpecialLayout = l;
     _keyboard_layout_view.setKeyboard(l);
   }
-
   KeyboardData loadLayout(int layout_id)
   {
     return KeyboardData.load(getResources(), layout_id);
   }
-
   /** Load a layout that contains a numpad. */
   KeyboardData loadNumpad(int layout_id)
   {
     return LayoutModifier.modify_numpad(KeyboardData.load(getResources(), layout_id),
         current_layout_unmodified());
   }
-
   KeyboardData loadNumericLayout()
   {
     return loadNumpad(_config.orientation_landscape ?
         R.xml.numeric_landscape : R.xml.numeric);
   }
-
   KeyboardData loadPinentry(int layout_id)
   {
     return LayoutModifier.modify_pinentry(KeyboardData.load(getResources(), layout_id),
         current_layout_unmodified());
   }
-
   @Override
   public void onCreate()
   {
@@ -150,26 +136,21 @@ public class Keyboard2 extends InputMethodService
     ClipboardHistoryService.on_startup(this, _keyeventhandler);
     _foldStateTracker.setChangedCallback(() -> { refresh_config(); });
   }
-
   @Override
   public void onDestroy() {
     super.onDestroy();
-
     _foldStateTracker.close();
   }
-
   private void create_keyboard_view()
   {
     _keyboard_container_view = (ViewGroup)inflate_view(R.layout.keyboard);
     _keyboard_layout_view = (Keyboard2View)_keyboard_container_view.findViewById(R.id.keyboard_view);
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
   }
-
   InputMethodManager get_imm()
   {
     return (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
   }
-
   private void refreshSubtypeImm()
   {
     _config.shouldOfferVoiceTyping = true;
@@ -186,7 +167,6 @@ public class Keyboard2 extends InputMethodService
       default_layout = loadLayout(R.xml.latn_qwerty_us);
     _localeTextLayout = default_layout;
   }
-
   private void refresh_current_dictionary()
   {
     _config.should_show_dictionary_switch =
@@ -199,7 +179,6 @@ public class Keyboard2 extends InputMethodService
     _config.current_dictionary_name =
       SupportedDictionaries.get(getResources()).get_display_name(dict_name);
   }
-
   /** Remember and apply the dictionary chosen by the user for the current
       context. */
   private void select_dictionary(String dict_name)
@@ -208,7 +187,6 @@ public class Keyboard2 extends InputMethodService
     refresh_current_dictionary();
     refresh_candidates_view();
   }
-
   private void refresh_candidates_view()
   {
     boolean should_show =
@@ -222,7 +200,6 @@ public class Keyboard2 extends InputMethodService
     }
     _candidates_view.setVisibility(should_show ? View.VISIBLE : View.GONE);
   }
-
   /** Might re-create the keyboard view. [_keyboard_layout_view.setKeyboard()] and
       [setInputView()] must be called soon after. */
   private void refresh_config()
@@ -245,7 +222,6 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view.reset();
     refresh_candidates_view();
   }
-
   private KeyboardData refresh_special_layout()
   {
     if (_config.editor_config.numeric_layout)
@@ -261,7 +237,6 @@ public class Keyboard2 extends InputMethodService
     }
     return null;
   }
-
   @Override
   public void onStartInputView(EditorInfo info, boolean restarting)
   {
@@ -273,7 +248,6 @@ public class Keyboard2 extends InputMethodService
     setInputView(_keyboard_container_view);
     Logs.debug_startup_input_view(info, _config);
   }
-
   @Override
   public void setInputView(View v)
   {
@@ -284,13 +258,11 @@ public class Keyboard2 extends InputMethodService
     updateSoftInputWindowLayoutParams();
     v.requestApplyInsets();
   }
-
   @Override
   public void updateFullscreenMode() {
     super.updateFullscreenMode();
     updateSoftInputWindowLayoutParams();
   }
-
   private void updateSoftInputWindowLayoutParams() {
     final Window window = getWindow().getWindow();
     // On API >= 35, Keyboard2View behaves as edge-to-edge
@@ -306,16 +278,13 @@ public class Keyboard2 extends InputMethodService
     }
     updateLayoutHeightOf(window, ViewGroup.LayoutParams.MATCH_PARENT);
     final View inputArea = window.findViewById(android.R.id.inputArea);
-
     updateLayoutHeightOf(
             (View) inputArea.getParent(),
             isFullscreenMode()
                     ? ViewGroup.LayoutParams.MATCH_PARENT
                     : ViewGroup.LayoutParams.WRAP_CONTENT);
     updateLayoutGravityOf((View) inputArea.getParent(), Gravity.BOTTOM);
-
   }
-
   private static void updateLayoutHeightOf(final Window window, final int layoutHeight) {
     final WindowManager.LayoutParams params = window.getAttributes();
     if (params != null && params.height != layoutHeight) {
@@ -323,7 +292,6 @@ public class Keyboard2 extends InputMethodService
       window.setAttributes(params);
     }
   }
-
   private static void updateLayoutHeightOf(final View view, final int layoutHeight) {
     final ViewGroup.LayoutParams params = view.getLayoutParams();
     if (params != null && params.height != layoutHeight) {
@@ -331,7 +299,6 @@ public class Keyboard2 extends InputMethodService
       view.setLayoutParams(params);
     }
   }
-
   private static void updateLayoutGravityOf(final View view, final int layoutGravity) {
     final ViewGroup.LayoutParams lp = view.getLayoutParams();
     if (lp instanceof LinearLayout.LayoutParams) {
@@ -348,7 +315,6 @@ public class Keyboard2 extends InputMethodService
       }
     }
   }
-
   @Override
   public void onCurrentInputMethodSubtypeChanged(InputMethodSubtype subtype)
   {
@@ -357,7 +323,6 @@ public class Keyboard2 extends InputMethodService
     refresh_candidates_view();
     _keyboard_layout_view.setKeyboard(current_layout());
   }
-
   @Override
   public void onUpdateSelection(int oldSelStart, int oldSelEnd, int newSelStart, int newSelEnd, int candidatesStart, int candidatesEnd)
   {
@@ -366,28 +331,24 @@ public class Keyboard2 extends InputMethodService
     if ((oldSelStart == oldSelEnd) != (newSelStart == newSelEnd))
       _keyboard_layout_view.set_selection_state(newSelStart != newSelEnd);
   }
-
   @Override
   public void onFinishInputView(boolean finishingInput)
   {
     super.onFinishInputView(finishingInput);
     _keyboard_layout_view.reset();
   }
-
   @Override
   public void onSharedPreferenceChanged(SharedPreferences _prefs, String _key)
   {
     refresh_config();
     _keyboard_layout_view.setKeyboard(current_layout());
   }
-
   @Override
   public boolean onEvaluateFullscreenMode()
   {
     /* Entirely disable fullscreen mode. */
     return false;
   }
-
   @Override
   public boolean onEvaluateInputViewShown()
   {
@@ -403,25 +364,21 @@ public class Keyboard2 extends InputMethodService
     }
     return true;
   }
-
   public void launch_dictionaries_activity()
   {
     start_activity(DictionariesActivity.class);
   }
-
   /** Called from [onClick] attributes. */
   public void launch_dictionaries_activity(View v)
   {
     launch_dictionaries_activity();
   }
-
   void start_activity(Class cls)
   {
     Intent intent = new Intent(this, cls);
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     startActivity(intent);
   }
-
   /** Not static */
   public class Receiver implements KeyEventHandler.IReceiver,
          KeyValue.Stateful.Symbol_provider, DictionarySwitcher.Callback
@@ -433,128 +390,113 @@ public class Keyboard2 extends InputMethodService
         case CONFIG:
           start_activity(SettingsActivity.class);
           break;
-
         case SWITCH_TEXT:
           _currentSpecialLayout = null;
           _keyboard_layout_view.setKeyboard(current_layout());
           break;
-
         case SWITCH_NUMERIC:
           setSpecialLayout(loadNumericLayout());
           break;
 
+        // === RANGES ===
+        case SWITCH_RANGES:
+          setSpecialLayout(loadLayout(R.xml.ranges));
+          break;
         case SWITCH_RANGES_NEXT:
-    setSpecialLayout(loadLayout(R.xml.ranges2));
-    break;
+          setSpecialLayout(loadLayout(R.xml.ranges2));
+          break;
+        case SWITCH_RANGES_PREVIOUS:
+          setSpecialLayout(loadLayout(R.xml.ranges));
+          break;
+        // ==============
 
         case SWITCH_EMOJI:
           if (_emojiPane == null)
             _emojiPane = (ViewGroup)inflate_view(R.layout.emoji_pane);
           setInputView(_emojiPane);
           break;
-
         case SWITCH_CLIPBOARD:
           if (_clipboard_pane == null)
             _clipboard_pane = (ViewGroup)inflate_view(R.layout.clipboard_pane);
           setInputView(_clipboard_pane);
           break;
-
         case SWITCH_BACK_EMOJI:
         case SWITCH_BACK_CLIPBOARD:
           setInputView(_keyboard_container_view);
           break;
-
         case CHANGE_METHOD_PICKER:
           get_imm().showInputMethodPicker();
           break;
-
         case CHANGE_METHOD_PREV:
           if (VERSION.SDK_INT < 28)
             get_imm().switchToLastInputMethod(getConnectionToken());
           else
             switchToPreviousInputMethod();
           break;
-
         case CHANGE_METHOD_NEXT:
           if (VERSION.SDK_INT < 28)
             get_imm().switchToNextInputMethod(getConnectionToken(), false);
           else
             switchToNextInputMethod(false);
           break;
-
         case ACTION:
           InputConnection conn = getCurrentInputConnection();
           if (conn != null)
             conn.performEditorAction(_config.editor_config.actionId);
           break;
-
         case SWITCH_FORWARD:
           incrTextLayout(1);
           break;
-
         case SWITCH_BACKWARD:
           incrTextLayout(-1);
           break;
-
         case SWITCH_GREEKMATH:
           setSpecialLayout(loadNumpad(R.xml.greekmath));
           break;
-
         case CAPS_LOCK:
           set_shift_state(true, true);
           break;
-
         case SWITCH_VOICE_TYPING:
           if (!VoiceImeSwitcher.switch_to_voice_ime(Keyboard2.this, get_imm(),
                 Config.globalPrefs()))
             _config.shouldOfferVoiceTyping = false;
           break;
-
         case SWITCH_VOICE_TYPING_CHOOSER:
           VoiceImeSwitcher.choose_voice_ime(Keyboard2.this, get_imm(),
               Config.globalPrefs());
           break;
-
         case HIDE_SELF:
           Keyboard2.this.requestHideSelf(0);
           break;
-
         case CHANGE_DICTIONARY:
           new DictionarySwitcher(Keyboard2.this, _dictionaries, this).choose();
           break;
       }
     }
-
     public void set_shift_state(boolean state, boolean lock)
     {
       _keyboard_layout_view.set_shift_state(state, lock);
     }
-
     public void set_compose_pending(boolean pending)
     {
       _keyboard_layout_view.set_compose_pending(pending);
     }
-
     public void selection_state_changed(boolean selection_is_ongoing)
     {
       _keyboard_layout_view.set_selection_state(selection_is_ongoing);
     }
-
     public InputConnection getCurrentInputConnection()
     {
       return Keyboard2.this.getCurrentInputConnection();
     }
-
     public Handler getHandler()
     {
       return _handler;
     }
-
     public void set_suggestions(Suggestions suggestions)
     {
       _candidates_view.set_candidates(suggestions);
     }
-
     public String provide_stateful_key_symbol(KeyValue.Stateful q)
     {
       switch (q)
@@ -566,23 +508,19 @@ public class Keyboard2 extends InputMethodService
       }
       return "";
     }
-
     public void on_change_dictionary(String dict_name)
     {
       select_dictionary(dict_name);
     }
-
     public void launch_dictionaries_activity()
     {
       Keyboard2.this.launch_dictionaries_activity();
     }
   }
-
   private IBinder getConnectionToken()
   {
     return getWindow().getWindow().getAttributes().token;
   }
-
   private View inflate_view(int layout)
   {
     return View.inflate(new ContextThemeWrapper(this, _config.theme), layout, null);

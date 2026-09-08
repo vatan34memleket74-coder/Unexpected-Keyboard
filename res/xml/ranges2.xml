@@ -11,9 +11,10 @@
     <key width="1.25" c="23:'23-24, 48'"/>
   </row>
   <row height="0.95">
-    <key width="1.8" role="action" c="switch_text"/>
-    <key width="4.6" role="space_bar" c="space"/>
-    <key width="1.8" role="action" c="backspace"/>
-    <key width="1.8" role="action" c="switch_ranges_previous"/>
+    <key width="1.4" role="action" c="switch_text"/>
+    <key width="1.4" role="action" c="switch_ranges_next"/>
+    <key width="4.0" role="space_bar" c="space"/>
+    <key width="1.4" role="action" c="backspace"/>
+    <key width="1.4" role="action" c="enter"/>
   </row>
 </keyboard>

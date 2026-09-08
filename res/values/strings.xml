@@ -70,6 +70,7 @@
     <string name="pref_theme_e_dark">Dark</string>
     <string name="pref_theme_e_light">Light</string>
     <string name="pref_theme_e_black">Black</string>
+    <string name="pref_theme_e_gboardblack">Gboard Black</string>
     <string name="pref_theme_e_altblack">Alternative Black</string>
     <string name="pref_theme_e_white">White</string>
     <string name="pref_theme_e_epaper">ePaper</string>

@@ -262,6 +262,7 @@ public final class Config
     {
       case "light": return R.style.Light;
       case "black": return R.style.Black;
+      case "gboardblack": return R.style.GboardBlack;
       case "altblack": return R.style.AltBlack;
       case "dark": return R.style.Dark;
       case "white": return R.style.White;

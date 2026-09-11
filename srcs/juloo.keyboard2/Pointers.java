@@ -518,16 +518,24 @@ public final class Pointers implements Handler.Callback
       case Swipe:
         return ptr.value;
       case Roundtrip:
-        return
-          modify_key_with_extra_modifier(
-              ptr,
-              getNearestKeyAtDirection(ptr, ptr.gesture.current_direction()),
-              KeyValue.Modifier.GESTURE);
+      {
+        // If no key is defined in that direction (the common case for plain
+        // letter keys), fall back to the key that was originally pressed
+        // instead of discarding the keystroke. Without this, small
+        // accidental finger movement (easy to trigger near a key's edge or
+        // while typing fast) silently swallows the character.
+        KeyValue side_key = getNearestKeyAtDirection(ptr, ptr.gesture.current_direction());
+        if (side_key == null)
+          return ptr.value;
+        return modify_key_with_extra_modifier(ptr, side_key, KeyValue.Modifier.GESTURE);
+      }
       case Circle:
         return
           modify_key_with_extra_modifier(ptr, ptr.key.keys[0],
               KeyValue.Modifier.GESTURE);
       case Anticircle:
+        if (ptr.key.anticircle == null)
+          return ptr.value;
         return _handler.modifyKey(ptr.key.anticircle, ptr.modifiers);
     }
     return ptr.value; // Unreachable

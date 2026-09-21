@@ -43,6 +43,8 @@ public final class Config
   public boolean add_number_row;
   public boolean number_row_symbols;
   public float swipe_dist_px;
+  /** Use a long-press selection panel for the secondary values of letter keys. */
+  public boolean letter_popup_selection;
   public float slide_step_px;
   public boolean suggestions_enabled;
   // Let the system handle vibration when false.
@@ -156,6 +158,9 @@ public final class Config
     float swipe_scaling = Math.min(dm.widthPixels, dm.heightPixels) / 10.f * dpi_ratio;
     float swipe_dist_value = Float.valueOf(_prefs.getString("swipe_dist", "15"));
     swipe_dist_px = swipe_dist_value / 25.f * swipe_scaling;
+    // Disabled by default so upgrading preserves the established direct-swipe
+    // interaction. Users who prefer forgiving letter taps can opt in.
+    letter_popup_selection = _prefs.getBoolean("letter_popup_selection", false);
     float slider_sensitivity = Float.valueOf(_prefs.getString("slider_sensitivity", "30")) / 100.f;
     slide_step_px = slider_sensitivity * swipe_scaling;
     vibrate_custom = _prefs.getBoolean("vibrate_custom", false);

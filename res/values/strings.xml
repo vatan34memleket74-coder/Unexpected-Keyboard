@@ -41,6 +41,8 @@
     <string name="pref_category_typing">Typing</string>
     <string name="pref_swipe_dist_title">Swiping distance</string>
     <string name="pref_swipe_dist_summary">Distance of characters in the corners of the keys (%s)</string>
+    <string name="pref_letter_popup_selection_title">Hold letter keys to select corner characters</string>
+    <string name="pref_letter_popup_selection_summary">Keep letter taps stable; hold a letter to choose one of its corner characters</string>
     <string name="pref_long_timeout_title">Long press timeout</string>
     <string name="pref_long_interval_title">Key repeat interval</string>
     <string name="pref_keyrepeat_enabled">Key repeat on long press</string>

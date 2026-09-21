@@ -271,6 +271,17 @@ public final class Pointers implements Handler.Callback
       return;
     }
 
+    // In the optional letter-popup mode, moving over a letter before a long
+    // press is treated as a tap. This prevents natural finger drift near a
+    // key edge from selecting a corner character. Once the panel is shown,
+    // movement chooses an explicitly displayed value.
+    if (isLetterPopupEligible(ptr))
+    {
+      if (ptr.letterPopupSelection)
+        updateLetterPopupSelection(ptr, x, y);
+      return;
+    }
+
     // The position in a IME windows is clampled to view.
     // For a better up swipe behaviour, set the y position to a negative value when clamped.
     if (y == 0.0) y = -400;
@@ -428,6 +439,66 @@ public final class Pointers implements Handler.Callback
     startLongPress(ptr);
   }
 
+  /**
+   * Return true when a normal letter has selectable text corner values and the
+   * user has opted in to the long-press selection panel. Numeric and special
+   * keys deliberately retain their established direct-swipe behavior. A key
+   * with a non-text corner action also keeps direct swiping so actions such as
+   * Escape, Tab, and sliders cannot change semantics in this optional mode.
+   */
+  private boolean isLetterPopupEligible(Pointer ptr)
+  {
+    KeyValue mainValue = ptr.letterPopupSelection ? ptr.popupMainValue : ptr.value;
+    if (!_config.letter_popup_selection || mainValue == null ||
+        mainValue.getKind() != KeyValue.Kind.Char ||
+        !Character.isLetter(mainValue.getChar()))
+      return false;
+    boolean hasCornerText = false;
+    for (int i = 1; i < ptr.key.keys.length; i++)
+    {
+      KeyValue value = _handler.modifyKey(ptr.key.keys[i], ptr.modifiers);
+      if (value == null)
+        continue;
+      if (!isTextKey(value))
+        return false;
+      hasCornerText = true;
+    }
+    return hasCornerText;
+  }
+
+  private static boolean isTextKey(KeyValue value)
+  {
+    return value.getKind() == KeyValue.Kind.Char ||
+        value.getKind() == KeyValue.Kind.String;
+  }
+
+  /** Select an item from the long-press panel, or restore the main letter. */
+  private void updateLetterPopupSelection(Pointer ptr, float x, float y)
+  {
+    float dx = x - ptr.downX;
+    float dy = y - ptr.downY;
+    int selected = 0;
+    KeyValue value = ptr.popupMainValue;
+    if (Math.abs(dx) + Math.abs(dy) >= _config.swipe_dist_px)
+    {
+      double a = Math.atan2(dy, dx) + Math.PI;
+      int direction = ((int)(a * 8 / Math.PI) + 12) % 16;
+      int index = DIRECTION_TO_INDEX[direction];
+      KeyValue candidate = _handler.modifyKey(ptr.key.keys[index], ptr.modifiers);
+      if (candidate != null)
+      {
+        selected = index;
+        value = candidate;
+      }
+    }
+    if (selected != ptr.popupSelectedIndex)
+    {
+      ptr.popupSelectedIndex = selected;
+      ptr.value = value;
+      _handler.onPointerFlagsChanged(true);
+    }
+  }
+
   /** A pointer is long pressing. */
   private void handleLongPress(Pointer ptr)
   {
@@ -441,6 +512,16 @@ public final class Pointers implements Handler.Callback
     // Latched key, no key
     if (ptr.hasFlagsAny(FLAG_P_LATCHED) || ptr.value == null)
       return;
+    if (isLetterPopupEligible(ptr))
+    {
+      ptr.letterPopupSelection = true;
+      ptr.popupMainValue = ptr.value;
+      ptr.popupSelectedIndex = 0;
+      // This redraws the keyboard and gives the same haptic confirmation as
+      // entering a normal swipe state, without committing a character yet.
+      _handler.onPointerFlagsChanged(true);
+      return;
+    }
     // Key is long-pressable
     KeyValue kv = KeyModifier.modify_long_press(ptr.value);
     if (!kv.equals(ptr.value))
@@ -558,6 +639,33 @@ public final class Pointers implements Handler.Callback
     return new Pointer(p, k, v, x, y, m, flags);
   }
 
+  /** Data required by the view to draw the current letter selection panel. */
+  public final class LetterPopup
+  {
+    public final KeyboardData.Key key;
+    public final KeyValue[] values;
+    public final int selectedIndex;
+
+    LetterPopup(Pointer ptr)
+    {
+      key = ptr.key;
+      values = new KeyValue[ptr.key.keys.length];
+      values[0] = ptr.popupMainValue;
+      for (int i = 1; i < values.length; i++)
+        values[i] = _handler.modifyKey(ptr.key.keys[i], ptr.modifiers);
+      selectedIndex = ptr.popupSelectedIndex;
+    }
+  }
+
+  /** Return the one currently visible letter selection panel, if any. */
+  public LetterPopup getLetterPopup()
+  {
+    for (Pointer ptr : _ptrs)
+      if (ptr.letterPopupSelection)
+        return new LetterPopup(ptr);
+    return null;
+  }
+
   private static final class Pointer
   {
     /** -1 when latched. */
@@ -578,6 +686,12 @@ public final class Pointers implements Handler.Callback
     public int timeoutWhat;
     /** [null] when not in sliding mode. */
     public Sliding sliding;
+    /** True after a long press opens the optional letter selection panel. */
+    public boolean letterPopupSelection;
+    /** Main value saved while [value] follows a selection in the panel. */
+    public KeyValue popupMainValue;
+    /** Index in [key.keys] currently selected by the panel. */
+    public int popupSelectedIndex;
 
     public Pointer(int p, KeyboardData.Key k, KeyValue v, float x, float y, Modifiers m, int f)
     {
@@ -591,6 +705,9 @@ public final class Pointers implements Handler.Callback
       flags = f;
       timeoutWhat = -1;
       sliding = null;
+      letterPopupSelection = false;
+      popupMainValue = null;
+      popupSelectedIndex = 0;
     }
 
     public boolean hasFlagsAny(int has)

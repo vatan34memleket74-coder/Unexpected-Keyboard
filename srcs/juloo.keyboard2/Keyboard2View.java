@@ -54,6 +54,7 @@ public class Keyboard2View extends View
   private Theme.Computed _tc;
 
   private static RectF _tmpRect = new RectF();
+  private final RectF _popupKeyRect = new RectF();
 
   enum Vertical
   {
@@ -337,6 +338,10 @@ public class Keyboard2View extends View
     Vertical.BOTTOM
   };
 
+  /** Grid positions of the values in [KeyboardData.Key.keys]. */
+  static final int[] POPUP_COLUMN = new int[]{1, 0, 2, 0, 2, 0, 2, 1, 1};
+  static final int[] POPUP_ROW = new int[]{1, 0, 0, 2, 2, 1, 1, 0, 2};
+
   @Override
   protected void onDraw(Canvas canvas)
   {
@@ -387,6 +392,76 @@ public class Keyboard2View extends View
       }
       y += row.height * _tc.row_height;
     }
+    drawLetterPopup(canvas);
+  }
+
+  /** Draw the selection panel for an opt-in long press on a letter key. */
+  private void drawLetterPopup(Canvas canvas)
+  {
+    Pointers.LetterPopup popup = _pointers.getLetterPopup();
+    if (popup == null || !getKeyFrame(popup.key, _popupKeyRect))
+      return;
+
+    float cellW = _keyWidth;
+    float cellH = _tc.row_height;
+    float panelW = cellW * 3;
+    float panelH = cellH * 3;
+    float left = _popupKeyRect.centerX() - panelW / 2f;
+    left = Math.max(0, Math.min(left, getWidth() - panelW));
+    // Prefer a panel above the key. For the top row, keep the panel inside
+    // the keyboard view; input still belongs to the original pointer.
+    float top = Math.max(0, _popupKeyRect.top - panelH - _tc.vertical_margin);
+
+    for (int i = 0; i < popup.values.length; i++)
+    {
+      KeyValue value = popup.values[i];
+      if (value == null)
+        continue;
+      float x = left + POPUP_COLUMN[i] * cellW + _tc.horizontal_margin / 2f;
+      float y = top + POPUP_ROW[i] * cellH + _tc.vertical_margin / 2f;
+      float keyW = cellW - _tc.horizontal_margin;
+      float keyH = cellH - _tc.vertical_margin;
+      boolean selected = i == popup.selectedIndex;
+      Theme.Computed.Key tcKey = selected ? _tc.key_activated : _tc.key;
+      drawKeyFrame(canvas, x, y, keyW, keyH, tcKey);
+      drawPopupLabel(canvas, value, x, y, keyW, keyH, selected, tcKey);
+    }
+  }
+
+  /** Find the frame location that is normally used to draw [target]. */
+  private boolean getKeyFrame(KeyboardData.Key target, RectF out)
+  {
+    float y = _tc.margin_top;
+    for (KeyboardData.Row row : _keyboard.rows)
+    {
+      y += row.shift * _tc.row_height;
+      float x = _marginLeft + _tc.margin_left;
+      float keyH = row.height * _tc.row_height - _tc.vertical_margin;
+      for (KeyboardData.Key key : row.keys)
+      {
+        x += key.shift * _keyWidth;
+        float keyW = _keyWidth * key.width - _tc.horizontal_margin;
+        if (key == target)
+        {
+          out.set(x, y, x + keyW, y + keyH);
+          return true;
+        }
+        x += _keyWidth * key.width;
+      }
+      y += row.height * _tc.row_height;
+    }
+    return false;
+  }
+
+  private void drawPopupLabel(Canvas canvas, KeyValue value, float x, float y,
+      float keyW, float keyH, boolean selected, Theme.Computed.Key tc)
+  {
+    float textSize = scaleTextSize(value, true);
+    int color = selected ? _theme.activatedColor : _theme.labelColor;
+    Paint paint = tc.label_paint(
+        value.hasFlagsAny(KeyValue.FLAG_KEY_FONT), color, textSize);
+    canvas.drawText(value.getString(), x + keyW / 2f,
+        y + (keyH - paint.ascent() - paint.descent()) / 2f, paint);
   }
 
   @Override

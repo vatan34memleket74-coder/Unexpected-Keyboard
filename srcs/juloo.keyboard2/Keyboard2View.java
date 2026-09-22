@@ -443,7 +443,7 @@ public class Keyboard2View extends View
       
       drawKeyFrame(canvas, x, y, previewW, previewH, _tc.key);
       float textSize = scaleTextSize(kv0, true) * 1.5f;
-      Paint p = _tc.label_paint(kv0.hasFlagsAny(KeyValue.FLAG_KEY_FONT), _theme.labelColor, textSize);
+      Paint p = _tc.key.label_paint(kv0.hasFlagsAny(KeyValue.FLAG_KEY_FONT), _theme.labelColor, textSize);
       canvas.drawText(kv0.getString(), x + previewW / 2f, y + (previewH - p.ascent() - p.descent()) / 2f, p);
     }
   }

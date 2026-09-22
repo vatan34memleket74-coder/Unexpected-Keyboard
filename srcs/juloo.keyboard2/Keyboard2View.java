@@ -226,35 +226,49 @@ public class Keyboard2View extends View
 
   private KeyboardData.Row getRowAtPosition(float ty)
   {
+    if (_keyboard.rows.isEmpty()) return null;
     float y = _config.marginTop;
-    if (ty < y)
-      return null;
+    if (ty <= y) return _keyboard.rows.get(0);
+    
+    KeyboardData.Row lastRow = null;
     for (KeyboardData.Row row : _keyboard.rows)
     {
       y += (row.shift + row.height) * _tc.row_height;
-      if (ty < y)
-        return row;
+      if (ty < y) return row;
+      lastRow = row;
     }
-    return null;
+    return lastRow;
   }
 
   private KeyboardData.Key getKeyAtPosition(float tx, float ty)
   {
     KeyboardData.Row row = getRowAtPosition(ty);
+    if (row == null || row.keys.isEmpty()) return null;
+    
     float x = _marginLeft;
-    if (row == null || tx < x)
-      return null;
+    KeyboardData.Key lastKey = null;
+    
     for (KeyboardData.Key key : row.keys)
     {
       float xLeft = x + key.shift * _keyWidth;
       float xRight = xLeft + key.width * _keyWidth;
-      if (tx < xLeft)
-        return null;
+      
+      // If we are to the left of the current key, snap to the closest
+      if (tx < xLeft) {
+         if (lastKey == null) return key; // Before the first key
+         // Between lastKey and key, pick the closer one
+         float distToLast = tx - x; // x is right edge of lastKey
+         float distToCurrent = xLeft - tx;
+         return (distToLast < distToCurrent) ? lastKey : key;
+      }
+      
       if (tx < xRight)
         return key;
+        
       x = xRight;
+      lastKey = key;
     }
-    return null;
+    return lastKey; // After the last key
   }
 
   private void vibrate()
@@ -380,11 +394,17 @@ public class Keyboard2View extends View
             case Normal: tc_key = _tc.key; break;
           }
         drawKeyFrame(canvas, x, y, keyW, keyH, tc_key);
-        if (k.keys[0] != null)
+        boolean isAlphabetKey = false;
+        if (k.keys[0] != null) {
+          KeyValue kv0 = modifyKey(k.keys[0], _mods);
+          if (kv0 != null && kv0.getKind() == KeyValue.Kind.Char && Character.isLetter(kv0.getChar())) {
+            isAlphabetKey = true;
+          }
           drawLabel(canvas, k.keys[0], keyW / 2f + x, y, keyH, isKeyDown, tc_key);
+        }
         for (int i = 1; i < 9; i++)
         {
-          if (k.keys[i] != null)
+          if (k.keys[i] != null && !isAlphabetKey)
             drawSubLabel(canvas, k.keys[i], x, y, keyW, keyH, i, isKeyDown, tc_key);
         }
         drawIndication(canvas, k, x, y, keyW, keyH, _tc);
@@ -393,32 +413,66 @@ public class Keyboard2View extends View
       y += row.height * _tc.row_height;
     }
     drawLetterPopup(canvas);
+    drawKeyPreviews(canvas);
   }
 
-  /** Draw the selection panel for an opt-in long press on a letter key. */
+  private void drawKeyPreviews(Canvas canvas) {
+    for (KeyboardData.Key k : _pointers.getPressedKeys()) {
+      if (k == null || k.keys[0] == null) continue;
+      // Only preview normal letter/text keys
+      KeyValue kv0 = modifyKey(k.keys[0], _mods);
+      if (kv0 == null || !Pointers.isTextKey(kv0)) continue;
+      
+      // Avoid showing preview if long-press popup is active for this key
+      Pointers.LetterPopup popup = _pointers.getLetterPopup();
+      if (popup != null && popup.key == k) continue;
+
+      if (!getKeyFrame(k, _popupKeyRect)) continue;
+      
+      float cellW = _keyWidth;
+      float cellH = _tc.row_height;
+      float keyW = cellW - _tc.horizontal_margin;
+      float keyH = cellH - _tc.vertical_margin;
+      
+      // Draw slightly enlarged above the key
+      float previewW = keyW * 1.5f;
+      float previewH = keyH * 1.5f;
+      float x = _popupKeyRect.centerX() - previewW / 2f;
+      float y = _popupKeyRect.top - previewH;
+      if (y < 0) y = _popupKeyRect.top; // Fallback if at very top
+      
+      drawKeyFrame(canvas, x, y, previewW, previewH, _tc.key);
+      float textSize = scaleTextSize(kv0, true) * 1.5f;
+      Paint p = _tc.label_paint(kv0.hasFlagsAny(KeyValue.FLAG_KEY_FONT), _theme.labelColor, textSize);
+      canvas.drawText(kv0.getString(), x + previewW / 2f, y + (previewH - p.ascent() - p.descent()) / 2f, p);
+    }
+  }
+
   private void drawLetterPopup(Canvas canvas)
   {
     Pointers.LetterPopup popup = _pointers.getLetterPopup();
-    if (popup == null || !getKeyFrame(popup.key, _popupKeyRect))
+    if (popup == null || popup.values.length == 0 || !getKeyFrame(popup.key, _popupKeyRect))
       return;
 
     float cellW = _keyWidth;
     float cellH = _tc.row_height;
-    float panelW = cellW * 3;
-    float panelH = cellH * 3;
+    float panelW = cellW * popup.values.length;
+    float panelH = cellH;
+    
     float left = _popupKeyRect.centerX() - panelW / 2f;
     left = Math.max(0, Math.min(left, getWidth() - panelW));
-    // Prefer a panel above the key. For the top row, keep the panel inside
-    // the keyboard view; input still belongs to the original pointer.
-    float top = Math.max(0, _popupKeyRect.top - panelH - _tc.vertical_margin);
+    
+    float top = _popupKeyRect.top - panelH - _tc.vertical_margin;
+    if (top < 0) {
+       top = _popupKeyRect.bottom + _tc.vertical_margin;
+       if (top + panelH > getHeight()) top = _popupKeyRect.top;
+    }
 
     for (int i = 0; i < popup.values.length; i++)
     {
       KeyValue value = popup.values[i];
-      if (value == null)
-        continue;
-      float x = left + POPUP_COLUMN[i] * cellW + _tc.horizontal_margin / 2f;
-      float y = top + POPUP_ROW[i] * cellH + _tc.vertical_margin / 2f;
+      float x = left + i * cellW + _tc.horizontal_margin / 2f;
+      float y = top + _tc.vertical_margin / 2f;
       float keyW = cellW - _tc.horizontal_margin;
       float keyH = cellH - _tc.vertical_margin;
       boolean selected = i == popup.selectedIndex;

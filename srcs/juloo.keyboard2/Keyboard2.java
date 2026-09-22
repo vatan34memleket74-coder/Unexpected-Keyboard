@@ -242,7 +242,9 @@ public class Keyboard2 extends InputMethodService
   {
     _config.editor_config.refresh(info, getResources());
     refresh_config();
-    _currentSpecialLayout = refresh_special_layout();
+    KeyboardData special = refresh_special_layout();
+    if (!restarting || special != null)
+      _currentSpecialLayout = special;
     _keyboard_layout_view.setKeyboard(current_layout());
     _keyeventhandler.started(_config);
     setInputView(_keyboard_container_view);

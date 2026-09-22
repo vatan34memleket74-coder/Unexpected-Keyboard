@@ -439,34 +439,48 @@ public final class Pointers implements Handler.Callback
     startLongPress(ptr);
   }
 
-  /**
-   * Return true when a normal letter has selectable text corner values and the
-   * user has opted in to the long-press selection panel. Numeric and special
-   * keys deliberately retain their established direct-swipe behavior. A key
-   * with a non-text corner action also keeps direct swiping so actions such as
-   * Escape, Tab, and sliders cannot change semantics in this optional mode.
-   */
-  private boolean isLetterPopupEligible(Pointer ptr)
-  {
+  static KeyValue[] getDistinctLetterAlternates(Pointer ptr, IPointerEventHandler handler) {
     KeyValue mainValue = ptr.letterPopupSelection ? ptr.popupMainValue : ptr.value;
-    if (!_config.letter_popup_selection || mainValue == null ||
-        mainValue.getKind() != KeyValue.Kind.Char ||
-        !Character.isLetter(mainValue.getChar()))
-      return false;
-    boolean hasCornerText = false;
-    for (int i = 1; i < ptr.key.keys.length; i++)
-    {
-      KeyValue value = _handler.modifyKey(ptr.key.keys[i], ptr.modifiers);
-      if (value == null)
-        continue;
-      if (!isTextKey(value))
-        return false;
-      hasCornerText = true;
+    if (mainValue == null || mainValue.getKind() != KeyValue.Kind.Char || !Character.isLetter(mainValue.getChar()))
+      return new KeyValue[0];
+      
+    java.util.ArrayList<KeyValue> list = new java.util.ArrayList<>();
+    char mainChar = mainValue.getChar();
+    
+    for (int i = 1; i < ptr.key.keys.length; i++) {
+      KeyValue value = handler.modifyKey(ptr.key.keys[i], ptr.modifiers);
+      if (value == null) continue;
+      if (!isTextKey(value)) return new KeyValue[0]; // Retain rule: any non-text corner disables popup
+      
+      if (value.getKind() == KeyValue.Kind.Char) {
+        char c = value.getChar();
+        if (!Character.isLetter(c) || c == mainChar) continue;
+        boolean dup = false;
+        for (KeyValue existing : list) {
+          if (existing.getKind() == KeyValue.Kind.Char && existing.getChar() == c) { dup = true; break; }
+        }
+        if (!dup) list.add(value);
+      } else if (value.getKind() == KeyValue.Kind.String) {
+        String s = value.getString();
+        if (s.length() != 1 || !Character.isLetter(s.charAt(0)) || s.charAt(0) == mainChar) continue;
+        boolean dup = false;
+        for (KeyValue existing : list) {
+          if (existing.getKind() == KeyValue.Kind.String && existing.getString().equals(s)) { dup = true; break; }
+          if (existing.getKind() == KeyValue.Kind.Char && existing.getChar() == s.charAt(0)) { dup = true; break; }
+        }
+        if (!dup) list.add(value);
+      }
     }
-    return hasCornerText;
+    return list.toArray(new KeyValue[0]);
   }
 
-  private static boolean isTextKey(KeyValue value)
+  private boolean isLetterPopupEligible(Pointer ptr)
+  {
+    if (!_config.letter_popup_selection) return false;
+    return getDistinctLetterAlternates(ptr, _handler).length > 0;
+  }
+
+  public static boolean isTextKey(KeyValue value)
   {
     return value.getKind() == KeyValue.Kind.Char ||
         value.getKind() == KeyValue.Kind.String;
@@ -475,23 +489,26 @@ public final class Pointers implements Handler.Callback
   /** Select an item from the long-press panel, or restore the main letter. */
   private void updateLetterPopupSelection(Pointer ptr, float x, float y)
   {
+    KeyValue[] values = getDistinctLetterAlternates(ptr, _handler);
+    if (values.length == 0) return;
+    
     float dx = x - ptr.downX;
     float dy = y - ptr.downY;
-    int selected = 0;
-    KeyValue value = ptr.popupMainValue;
-    if (Math.abs(dx) + Math.abs(dy) >= _config.swipe_dist_px)
-    {
-      double a = Math.atan2(dy, dx) + Math.PI;
-      int direction = ((int)(a * 8 / Math.PI) + 12) % 16;
-      int index = DIRECTION_TO_INDEX[direction];
-      KeyValue candidate = _handler.modifyKey(ptr.key.keys[index], ptr.modifiers);
-      if (candidate != null)
-      {
-        selected = index;
-        value = candidate;
-      }
+    
+    int selected;
+    if (dy > _config.swipe_dist_px * 2f) {
+      selected = -1; // Cancelled
+    } else {
+      int centerIndex = values.length / 2;
+      int steps = Math.round(dx / (_config.swipe_dist_px * 1.5f));
+      selected = centerIndex + steps;
+      if (selected < 0) selected = 0;
+      if (selected >= values.length) selected = values.length - 1;
     }
-    if (selected != ptr.popupSelectedIndex)
+    
+    KeyValue value = selected >= 0 ? values[selected] : ptr.popupMainValue;
+    
+    if (selected != ptr.popupSelectedIndex || ptr.value != value)
     {
       ptr.popupSelectedIndex = selected;
       ptr.value = value;
@@ -516,7 +533,9 @@ public final class Pointers implements Handler.Callback
     {
       ptr.letterPopupSelection = true;
       ptr.popupMainValue = ptr.value;
-      ptr.popupSelectedIndex = 0;
+      KeyValue[] values = getDistinctLetterAlternates(ptr, _handler);
+      ptr.popupSelectedIndex = values.length / 2;
+      ptr.value = values[ptr.popupSelectedIndex];
       // This redraws the keyboard and gives the same haptic confirmation as
       // entering a normal swipe state, without committing a character yet.
       _handler.onPointerFlagsChanged(true);
@@ -649,15 +668,21 @@ public final class Pointers implements Handler.Callback
     LetterPopup(Pointer ptr)
     {
       key = ptr.key;
-      values = new KeyValue[ptr.key.keys.length];
-      values[0] = ptr.popupMainValue;
-      for (int i = 1; i < values.length; i++)
-        values[i] = _handler.modifyKey(ptr.key.keys[i], ptr.modifiers);
+      values = getDistinctLetterAlternates(ptr, _handler);
       selectedIndex = ptr.popupSelectedIndex;
     }
   }
 
   /** Return the one currently visible letter selection panel, if any. */
+  public java.util.List<KeyboardData.Key> getPressedKeys() {
+    java.util.List<KeyboardData.Key> keys = new java.util.ArrayList<>();
+    for (Pointer p : _ptrs) {
+      if (p.key != null && !p.hasFlagsAny(FLAG_P_FAKE))
+        keys.add(p.key);
+    }
+    return keys;
+  }
+
   public LetterPopup getLetterPopup()
   {
     for (Pointer ptr : _ptrs)

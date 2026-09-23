@@ -44,6 +44,9 @@ public class CandidatesView extends LinearLayout
       Set to true when a clipboard copy event occurs; set to false when the
       user starts typing or the recency timeout expires. */
   boolean _clipboard_suggestion_active = false;
+  /** Whether the editor is currently idle (no word being composed).
+      Updated from [Suggestions.is_idle] in [set_candidates]. */
+  boolean _is_idle = true;
   /** Index in [_items] at which the clipboard text is currently shown, or -1
       if not currently shown as a suggestion. */
   int _clipboard_item_index = -1;
@@ -107,6 +110,7 @@ public class CandidatesView extends LinearLayout
   public void set_candidates(Suggestions s)
   {
     int s_count = s.count;
+    _is_idle = s.is_idle;
     for (int i = 0; i < Suggestions.MAX_COUNT; i++)
       _items[i] = (i < s_count) ? s.suggestions[i] : null;
     _items[3] = s.emoji_suggestion;
@@ -115,9 +119,9 @@ public class CandidatesView extends LinearLayout
     // Hide the status message when showing candidates.
     if (s_count != 0 && _status_no_dict != null)
       _status_no_dict.setVisibility(View.GONE);
-    // If no word suggestions and clipboard suggestion is active, show the
-    // recently copied text in the first available word-suggestion slot.
-    if (s_count == 0 && _clipboard_suggestion_active && _recent_clip != null)
+    // If no word suggestions and the editor is idle, show the recently copied
+    // text as a quick-paste suggestion in the first available slot.
+    if (s_count == 0 && _is_idle && _clipboard_suggestion_active && _recent_clip != null)
     {
       for (int i = 0; i < Suggestions.MAX_COUNT; i++)
       {
@@ -275,7 +279,9 @@ public class CandidatesView extends LinearLayout
     _clipboard_item_index = -1;
     cancel_clipboard_timeout();
     postDelayed(_clipboard_timeout_run, CLIPBOARD_RECENT_TIMEOUT_MS);
-    refresh_clipboard_suggestion();
+    // Only show the clipboard suggestion if the editor is currently idle.
+    if (_is_idle)
+      refresh_clipboard_suggestion();
   }
 
   /** Re-render the suggestion items to incorporate the clipboard suggestion

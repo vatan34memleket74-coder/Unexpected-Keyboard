@@ -479,6 +479,12 @@ public final class Pointers implements Handler.Callback
     if (!_config.letter_popup_selection) return false;
     if (ptr.key == null || ptr.key.role == KeyboardData.Key.Role.Enter)
       return false;
+    if (ptr.key.role == KeyboardData.Key.Role.Space_bar)
+      return false;
+    KeyValue mainValue = ptr.letterPopupSelection ? ptr.popupMainValue : ptr.value;
+    if (mainValue != null && mainValue.getKind() == KeyValue.Kind.Modifier
+        && mainValue.getModifier() == KeyValue.Modifier.CTRL)
+      return false;
     return getPopupAlternates(ptr, _handler).length > 0;
   }
 

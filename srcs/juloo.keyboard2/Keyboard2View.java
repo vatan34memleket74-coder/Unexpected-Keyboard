@@ -396,13 +396,14 @@ public class Keyboard2View extends View
         drawKeyFrame(canvas, x, y, keyW, keyH, tc_key);
         boolean isAlphabetKey = false;
         boolean hideSubLabels = false;
+        boolean isCtrl = false;
         if (k.keys[0] != null) {
           KeyValue kv0 = modifyKey(k.keys[0], _mods);
           if (kv0 != null && kv0.getKind() == KeyValue.Kind.Char && Character.isLetter(kv0.getChar())) {
             isAlphabetKey = true;
           } else if (kv0 != null && kv0.getKind() == KeyValue.Kind.Modifier
               && kv0.getModifier() == KeyValue.Modifier.CTRL) {
-            hideSubLabels = true;
+            isCtrl = true;
           } else if (kv0 != null && kv0.getKind() == KeyValue.Kind.Char
               && kv0.getChar() == ',') {
             hideSubLabels = true;
@@ -412,7 +413,11 @@ public class Keyboard2View extends View
         for (int i = 1; i < 9; i++)
         {
           if (k.keys[i] != null && !isAlphabetKey && !hideSubLabels)
+          {
+            if (isCtrl && i != 4)
+              continue;
             drawSubLabel(canvas, k.keys[i], x, y, keyW, keyH, i, isKeyDown, tc_key);
+          }
         }
         drawIndication(canvas, k, x, y, keyW, keyH, _tc);
         x += _keyWidth * k.width;

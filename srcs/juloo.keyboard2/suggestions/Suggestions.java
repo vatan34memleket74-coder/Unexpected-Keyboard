@@ -25,6 +25,10 @@ public final class Suggestions
   /** Number of suggestions in [suggestions]. */
   public static final int MAX_COUNT = 3;
 
+  /** Whether the user is currently idle (not composing a word). The current
+      word is empty. Used to gate temporary clipboard-suggestion display. */
+  public boolean is_idle = true;
+
   public Suggestions(Callback c, Config conf)
   {
     _callback = c;
@@ -41,6 +45,7 @@ public final class Suggestions
   {
     if (!_enabled)
       return;
+    is_idle = word.isEmpty();
     if (word.length() < 2 || _config.current_dictionary == null)
       clear();
     else

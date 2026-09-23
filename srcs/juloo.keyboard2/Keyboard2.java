@@ -495,6 +495,10 @@ public class Keyboard2 extends InputMethodService
     {
       return _handler;
     }
+    public void clear_clipboard_suggestion()
+    {
+      _candidates_view.clear_clipboard_suggestion();
+    }
     public void set_suggestions(Suggestions suggestions)
     {
       _candidates_view.set_candidates(suggestions);

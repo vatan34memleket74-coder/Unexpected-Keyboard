@@ -17,6 +17,7 @@ import juloo.keyboard2.Config;
 import juloo.keyboard2.KeyValue;
 import juloo.keyboard2.Pointers;
 import juloo.keyboard2.R;
+import juloo.keyboard2.ClipboardHistoryService;
 
 public class CandidatesView extends LinearLayout
 {
@@ -36,10 +37,27 @@ public class CandidatesView extends LinearLayout
       shown. Might be [null]. */
   View _status_no_dict = null;
 
-  View _dictionary_switch_button;
-  boolean should_show_dictionary_switch = false;
-
-  TextView _lang_name_view;
+  View _clipboard_button;
+  /** The most recently copied text, eligible for quick-paste suggestion. */
+  String _recent_clip = null;
+  /** Whether the recently copied text is eligible to appear as a suggestion.
+      Set to true when a clipboard copy event occurs; set to false when the
+      user starts typing or the recency timeout expires. */
+  boolean _clipboard_suggestion_active = false;
+  /** Index in [_items] at which the clipboard text is currently shown, or -1
+      if not currently shown as a suggestion. */
+  int _clipboard_item_index = -1;
+  /** Delay (in ms) after which the recently-copied text is no longer offered
+      as a suggestion. */
+  static final long CLIPBOARD_RECENT_TIMEOUT_MS = 15_000;
+  Runnable _clipboard_timeout_run = new Runnable()
+  {
+    public void run()
+    {
+      clear_clipboard_suggestion();
+    }
+  };
+  ClipboardHistoryService.OnClipboardHistoryChange _clipboard_listener = null;
 
   public CandidatesView(Context context, AttributeSet attrs)
   {
@@ -54,8 +72,36 @@ public class CandidatesView extends LinearLayout
     setup_item_view(1, R.id.candidates_right);
     setup_item_view(2, R.id.candidates_left);
     setup_item_view(3, R.id.candidates_emoji);
-    setup_dictionary_switch_button();
-    _lang_name_view = (TextView)findViewById(R.id.candidates_lang_name);
+    setup_clipboard_button();
+  }
+
+  /** Paste text into the editor via the clipboard service. */
+  void send_suggestion_text(String text)
+  {
+    ClipboardHistoryService.paste(text);
+  }
+
+  /** Clear any pending clipboard-suggestion timeout. */
+  void cancel_clipboard_timeout()
+  {
+    removeCallbacks(_clipboard_timeout_run);
+  }
+
+  /** Disable and visually remove the temporary clipboard suggestion.
+      Called when the user starts typing, the recency timeout expires, or
+      the candidates view is cleared. Does NOT affect the permanent
+      clipboard button visibility. */
+  public void clear_clipboard_suggestion()
+  {
+    _clipboard_suggestion_active = false;
+    if (_clipboard_item_index >= 0)
+    {
+      _items[_clipboard_item_index] = null;
+      TextView v = _item_views[_clipboard_item_index];
+      if (v != null) v.setVisibility(View.GONE);
+    }
+    _clipboard_item_index = -1;
+    cancel_clipboard_timeout();
   }
 
   public void set_candidates(Suggestions s)
@@ -64,9 +110,25 @@ public class CandidatesView extends LinearLayout
     for (int i = 0; i < Suggestions.MAX_COUNT; i++)
       _items[i] = (i < s_count) ? s.suggestions[i] : null;
     _items[3] = s.emoji_suggestion;
+    // Reset clipboard suggestion tracking at the start of every refresh.
+    _clipboard_item_index = -1;
     // Hide the status message when showing candidates.
     if (s_count != 0 && _status_no_dict != null)
       _status_no_dict.setVisibility(View.GONE);
+    // If no word suggestions and clipboard suggestion is active, show the
+    // recently copied text in the first available word-suggestion slot.
+    if (s_count == 0 && _clipboard_suggestion_active && _recent_clip != null)
+    {
+      for (int i = 0; i < Suggestions.MAX_COUNT; i++)
+      {
+        if (_items[i] == null)
+        {
+          _items[i] = _recent_clip;
+          _clipboard_item_index = i;
+          break;
+        }
+      }
+    }
     for (int i = 0; i < _item_views.length; i++)
     {
       TextView v = _item_views[i];
@@ -80,14 +142,12 @@ public class CandidatesView extends LinearLayout
         v.setVisibility(View.GONE);
       }
     }
-    int dict_vis =
-      (should_show_dictionary_switch && s.count == 0) ? View.VISIBLE : View.GONE;
-    _dictionary_switch_button.setVisibility(dict_vis);
-    _lang_name_view.setVisibility(dict_vis);
+    update_clipboard_button();
   }
 
   void clear_candidates()
   {
+    clear_clipboard_suggestion();
     for (int i = 0; i < _item_views.length; i++)
     {
       _items[i] = null;
@@ -104,9 +164,8 @@ public class CandidatesView extends LinearLayout
       inflate_status_no_dict(config);
     else if (_status_no_dict != null)
       _status_no_dict.setVisibility(View.GONE);
-    should_show_dictionary_switch = config.should_show_dictionary_switch;
     set_sizes(config);
-    _lang_name_view.setText(config.current_dictionary_name);
+    update_clipboard_button();
   }
 
   /** Set the height of the suggestion row and the text size. */
@@ -159,7 +218,10 @@ public class CandidatesView extends LinearLayout
           public void onClick(View _v)
           {
             String it = _items[item_index];
-            if (it != null)
+            if (it == null) return;
+            if (item_index == _clipboard_item_index)
+              send_suggestion_text(it);
+            else
               Config.globalConfig().handler.suggestion_entered(it);
           }
         });
@@ -167,19 +229,107 @@ public class CandidatesView extends LinearLayout
     _item_views[item_index] = v;
   }
 
-  void setup_dictionary_switch_button()
+  void setup_clipboard_button()
   {
-    _dictionary_switch_button = findViewById(R.id.dictionary_switch);
-    _dictionary_switch_button.setOnClickListener(new View.OnClickListener()
-        {
-          @Override
-          public void onClick(View _v)
+    _clipboard_button = findViewById(R.id.candidates_clipboard_button);
+    if (_clipboard_button != null)
+      _clipboard_button.setOnClickListener(new View.OnClickListener()
           {
-            Config.globalConfig().handler.key_up(
-                KeyValue.getKeyByName("change_dictionary"),
-                Pointers.Modifiers.EMPTY);
+            @Override
+            public void onClick(View _v)
+            {
+              ClipboardHistoryService srv = ClipboardHistoryService.get_service(getContext());
+              if (srv == null) return;
+              List<String> history = srv.clear_expired_and_get_history();
+              if (history.isEmpty()) return;
+              send_suggestion_text(history.get(0));
+            }
+          });
+    // Listen for clipboard changes to capture recently copied text.
+    ClipboardHistoryService srv = ClipboardHistoryService.get_service(getContext());
+    if (srv != null)
+    {
+      _clipboard_listener = new ClipboardHistoryService.OnClipboardHistoryChange()
+      {
+        @Override
+        public void on_clipboard_history_change()
+        {
+          on_clipboard_changed();
+        }
+      };
+      srv.set_on_clipboard_history_change(_clipboard_listener);
+    }
+    update_clipboard_button();
+  }
+
+  /** Called when the clipboard history changes. Captures the most recent copy
+      as an eligible quick-paste suggestion and refreshes the UI. */
+  void on_clipboard_changed()
+  {
+    ClipboardHistoryService srv = ClipboardHistoryService.get_service(getContext());
+    if (srv == null) return;
+    List<String> history = srv.clear_expired_and_get_history();
+    if (history.isEmpty()) return;
+    _recent_clip = history.get(0);
+    _clipboard_suggestion_active = true;
+    _clipboard_item_index = -1;
+    cancel_clipboard_timeout();
+    postDelayed(_clipboard_timeout_run, CLIPBOARD_RECENT_TIMEOUT_MS);
+    refresh_clipboard_suggestion();
+  }
+
+  /** Re-render the suggestion items to incorporate the clipboard suggestion
+      state. Does not query the dictionary. */
+  void refresh_clipboard_suggestion()
+  {
+    _clipboard_item_index = -1;
+    if (_clipboard_suggestion_active && _recent_clip != null)
+    {
+      for (int i = 0; i < Suggestions.MAX_COUNT; i++)
+      {
+        if (_items[i] == null)
+        {
+          _items[i] = _recent_clip;
+          _clipboard_item_index = i;
+          TextView v = _item_views[i];
+          if (v != null)
+          {
+            v.setText(_recent_clip);
+            v.setVisibility(View.VISIBLE);
           }
-        });
+          break;
+        }
+      }
+    }
+    update_clipboard_button_visibility();
+  }
+
+  /** Update the permanent clipboard button visibility and refresh the
+      clipboard suggestion if active. */
+  void update_clipboard_button()
+  {
+    update_clipboard_button_visibility();
+    if (_clipboard_suggestion_active && _recent_clip != null)
+      refresh_clipboard_suggestion();
+  }
+
+  /** Update only the permanent clipboard button visibility.
+      The button is always visible when it exists; the click handler
+      safely does nothing if clipboard history is empty. */
+  void update_clipboard_button_visibility()
+  {
+    if (_clipboard_button == null) return;
+    _clipboard_button.setVisibility(View.VISIBLE);
+  }
+
+  @Override
+  protected void onDetachedFromWindow()
+  {
+    super.onDetachedFromWindow();
+    cancel_clipboard_timeout();
+    ClipboardHistoryService srv = ClipboardHistoryService.get_service(getContext());
+    if (srv != null && _clipboard_listener != null)
+      srv.set_on_clipboard_history_change(null);
   }
 
   /** Whether the candidates view should be shown for a given editor. */

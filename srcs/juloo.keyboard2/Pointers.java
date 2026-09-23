@@ -271,14 +271,14 @@ public final class Pointers implements Handler.Callback
       return;
     }
 
-    // In the optional letter-popup mode, moving over a letter before a long
+    // In the optional popup mode, moving over a key before a long
     // press is treated as a tap. This prevents natural finger drift near a
     // key edge from selecting a corner character. Once the panel is shown,
     // movement chooses an explicitly displayed value.
-    if (isLetterPopupEligible(ptr))
+    if (isPopupEligible(ptr))
     {
       if (ptr.letterPopupSelection)
-        updateLetterPopupSelection(ptr, x, y);
+        updatePopupSelection(ptr, x, y);
       return;
     }
 
@@ -474,10 +474,40 @@ public final class Pointers implements Handler.Callback
     return list.toArray(new KeyValue[0]);
   }
 
-  private boolean isLetterPopupEligible(Pointer ptr)
+  private boolean isPopupEligible(Pointer ptr)
   {
     if (!_config.letter_popup_selection) return false;
-    return getDistinctLetterAlternates(ptr, _handler).length > 0;
+    if (ptr.key == null || ptr.key.role == KeyboardData.Key.Role.Enter)
+      return false;
+    return getPopupAlternates(ptr, _handler).length > 0;
+  }
+
+  /** Return the distinct alternate values for the long-press popup panel.
+      For letter keys, this delegates to [getDistinctLetterAlternates] which
+      filters and de-duplicates letter alternates. For non-letter keys (e.g.
+      Ctrl, comma), this returns all non-null alternates at positions 1-8,
+      with modifiers applied, excluding the main value. */
+  static KeyValue[] getPopupAlternates(Pointer ptr, IPointerEventHandler handler)
+  {
+    KeyValue mainValue = ptr.letterPopupSelection ? ptr.popupMainValue : ptr.value;
+    if (mainValue == null)
+      return new KeyValue[0];
+    if (mainValue.getKind() == KeyValue.Kind.Char
+        && Character.isLetter(mainValue.getChar()))
+      return getDistinctLetterAlternates(ptr, handler);
+    // Non-letter keys: collect all alternates at positions 1-8
+    java.util.ArrayList<KeyValue> list = new java.util.ArrayList<>();
+    for (int i = 1; i < ptr.key.keys.length; i++)
+    {
+      KeyValue value = handler.modifyKey(ptr.key.keys[i], ptr.modifiers);
+      if (value == null) continue;
+      if (value.equals(mainValue)) continue;
+      boolean dup = false;
+      for (KeyValue existing : list)
+        if (existing.equals(value)) { dup = true; break; }
+      if (!dup) list.add(value);
+    }
+    return list.toArray(new KeyValue[0]);
   }
 
   public static boolean isTextKey(KeyValue value)
@@ -487,9 +517,9 @@ public final class Pointers implements Handler.Callback
   }
 
   /** Select an item from the long-press panel, or restore the main letter. */
-  private void updateLetterPopupSelection(Pointer ptr, float x, float y)
+  private void updatePopupSelection(Pointer ptr, float x, float y)
   {
-    KeyValue[] values = getDistinctLetterAlternates(ptr, _handler);
+    KeyValue[] values = getPopupAlternates(ptr, _handler);
     if (values.length == 0) return;
     
     float dx = x - ptr.downX;
@@ -529,11 +559,11 @@ public final class Pointers implements Handler.Callback
     // Latched key, no key
     if (ptr.hasFlagsAny(FLAG_P_LATCHED) || ptr.value == null)
       return;
-    if (isLetterPopupEligible(ptr))
+    if (isPopupEligible(ptr))
     {
       ptr.letterPopupSelection = true;
       ptr.popupMainValue = ptr.value;
-      KeyValue[] values = getDistinctLetterAlternates(ptr, _handler);
+      KeyValue[] values = getPopupAlternates(ptr, _handler);
       ptr.popupSelectedIndex = values.length / 2;
       ptr.value = values[ptr.popupSelectedIndex];
       // This redraws the keyboard and gives the same haptic confirmation as
@@ -665,12 +695,12 @@ public final class Pointers implements Handler.Callback
     public final KeyValue[] values;
     public final int selectedIndex;
 
-    LetterPopup(Pointer ptr)
-    {
-      key = ptr.key;
-      values = getDistinctLetterAlternates(ptr, _handler);
-      selectedIndex = ptr.popupSelectedIndex;
-    }
+     LetterPopup(Pointer ptr)
+     {
+       key = ptr.key;
+       values = getPopupAlternates(ptr, _handler);
+       selectedIndex = ptr.popupSelectedIndex;
+     }
   }
 
   /** Return the one currently visible letter selection panel, if any. */

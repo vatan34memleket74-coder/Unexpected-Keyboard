@@ -97,10 +97,11 @@ public final class CurrentlyTypedWord
     }
     else if (newSelStart != _cursor)
     {
+      // Cursor moved without a selection. Refresh the current word so that
+      // suggestions are recomputed for the word at the new cursor position,
+      // including words that were typed before (e.g. misspelled words).
       _cursor = newSelStart;
-      _w_cursor += newSelStart - oldSelStart;
-      if (_w_cursor < -_w.length() || _w_cursor > 0)
-        refresh_current_word();
+      refresh_current_word();
     }
   }
 

@@ -51,6 +51,15 @@
     <item name="android:textColor">?attr/colorSubLabel</item>
     <item name="android:layout_marginEnd">@dimen/candidates_gap</item>
   </style>
+  <style name="candidates_clipboard_button">
+    <item name="android:layout_width">@dimen/candidates_clipboard_btn_width</item>
+    <item name="android:layout_height">@dimen/candidates_clipboard_btn_width</item>
+    <item name="android:layout_weight">0</item>
+    <item name="android:layout_gravity">center_vertical</item>
+    <item name="android:padding">@dimen/candidates_suggestions_padding</item>
+    <item name="android:src">@drawable/ic_clipboard_bar</item>
+    <item name="android:tint">?attr/colorSubLabel</item>
+  </style>
   <!-- Emoji pane -->
   <style name="emojiTypeButton">
     <item name="android:padding">1px</item>

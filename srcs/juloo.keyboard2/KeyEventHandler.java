@@ -139,6 +139,21 @@ public final class KeyEventHandler
     replace_surrounding_text(old.length() + cur_rel, -cur_rel, text);
     last_replaced_word = old;
     last_replacement_word_len = text.length();
+    // Auto-insert a space after the suggestion if there isn't already one.
+    InputConnection conn = _recv.getCurrentInputConnection();
+    boolean needs_space = true;
+    if (conn != null)
+    {
+      CharSequence after = conn.getTextAfterCursor(1, 0);
+      if (after != null && after.length() > 0
+          && Character.isWhitespace(after.charAt(0)))
+        needs_space = false;
+    }
+    if (needs_space)
+    {
+      send_text(" ");
+      last_replacement_word_len += 1;
+    }
     _next_last_action = LastAction.SUGGESTION_ENTERED;
   }
 
@@ -257,6 +272,7 @@ public final class KeyEventHandler
     InputConnection conn = _recv.getCurrentInputConnection();
     if (conn == null)
       return;
+    _recv.clear_clipboard_suggestion();
     _autocap.typed(text);
     _typedword.typed(text);
     conn.commitText(text, 1);
@@ -268,6 +284,7 @@ public final class KeyEventHandler
     InputConnection conn = _recv.getCurrentInputConnection();
     if (conn == null)
       return;
+    _recv.clear_clipboard_suggestion();
     conn.beginBatchEdit();
     conn.deleteSurroundingText(remove_before, remove_after);
     conn.commitText(new_text, 1);
@@ -551,7 +568,7 @@ public final class KeyEventHandler
     if (_space_bar_auto_complete && _suggestions.count > 0
         && !_typedword.is_selection_not_empty()
         && _typedword.cursor_relative() == 0)
-      suggestion_entered(_suggestions.suggestions[0] + " ");
+      suggestion_entered(_suggestions.suggestions[0]);
     else
       send_text(" ");
   }
@@ -579,6 +596,7 @@ public final class KeyEventHandler
     public void selection_state_changed(boolean selection_is_ongoing);
     public InputConnection getCurrentInputConnection();
     public Handler getHandler();
+    public void clear_clipboard_suggestion();
   }
 
   class Autocapitalisation_callback implements Autocapitalisation.Callback

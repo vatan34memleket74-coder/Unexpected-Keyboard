@@ -22,10 +22,19 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.14.3
+
+      - name: Restore debug keystore from GitHub Secrets
+        run: |
+          if [[ ! "${{ secrets.DEBUG_KEYSTORE }}" = "" ]]; then
+              echo "${{ secrets.DEBUG_KEYSTORE }}" > "debug.keystore.asc"
+              if [[ -s "debug.keystore.asc" ]]; then
+                  echo "Restoring debug keystore from GitHub secrets"
+                  gpg -d --passphrase "debug0" --batch "debug.keystore.asc" > "debug.keystore"
+              fi
+          fi
 
       - name: Build debug APK
         run: ./gradlew assembleDebug

@@ -303,7 +303,7 @@ public final class KeyEventHandler
   }
 
   @SuppressLint("InlinedApi")
-  void handle_editing_key(KeyValue.Editing ev)
+  public void handle_editing_key(KeyValue.Editing ev)
   {
     switch (ev)
     {

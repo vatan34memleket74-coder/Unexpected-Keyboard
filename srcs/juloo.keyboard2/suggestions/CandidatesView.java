@@ -62,6 +62,22 @@ public class CandidatesView extends LinearLayout
   };
   ClipboardHistoryService.OnClipboardHistoryChange _clipboard_listener = null;
 
+  /** Type of each candidate item. */
+  enum ItemType { NORMAL, CLIPBOARD, PASTE, UNDO, REDO }
+  ItemType[] _item_types = new ItemType[NUM_CANDIDATES];
+
+  /** Listener for clipboard button clicks. */
+  public interface OnClipboardButtonClickListener
+  {
+    void onClipboardButtonClick();
+  }
+  private OnClipboardButtonClickListener _clipboard_button_click_listener = null;
+
+  public void setOnClipboardButtonClickListener(OnClipboardButtonClickListener l)
+  {
+    _clipboard_button_click_listener = l;
+  }
+
   public CandidatesView(Context context, AttributeSet attrs)
   {
     super(context, attrs);
@@ -112,8 +128,12 @@ public class CandidatesView extends LinearLayout
     int s_count = s.count;
     _is_idle = s.is_idle;
     for (int i = 0; i < Suggestions.MAX_COUNT; i++)
+    {
       _items[i] = (i < s_count) ? s.suggestions[i] : null;
+      _item_types[i] = ItemType.NORMAL;
+    }
     _items[3] = s.emoji_suggestion;
+    _item_types[3] = ItemType.NORMAL;
     // Reset clipboard suggestion tracking at the start of every refresh.
     _clipboard_item_index = -1;
     // Hide the status message when showing candidates.
@@ -121,15 +141,34 @@ public class CandidatesView extends LinearLayout
       _status_no_dict.setVisibility(View.GONE);
     // If no word suggestions and the editor is idle, show the recently copied
     // text as a quick-paste suggestion in the first available slot.
+    // Also show Paste, Undo, Redo actions in remaining slots.
     if (s_count == 0 && _is_idle && _clipboard_suggestion_active && _recent_clip != null)
     {
+      // First, add clipboard quick-paste
       for (int i = 0; i < Suggestions.MAX_COUNT; i++)
       {
         if (_items[i] == null)
         {
           _items[i] = _recent_clip;
+          _item_types[i] = ItemType.CLIPBOARD;
           _clipboard_item_index = i;
           break;
+        }
+      }
+      // Then add Paste, Undo, Redo in remaining slots
+      String pasteLabel = getResources().getString(R.string.key_descr_paste);
+      String undoLabel = getResources().getString(R.string.key_descr_undo);
+      String redoLabel = getResources().getString(R.string.key_descr_redo);
+      String[] actionLabels = { pasteLabel, undoLabel, redoLabel };
+      ItemType[] actionTypes = { ItemType.PASTE, ItemType.UNDO, ItemType.REDO };
+      int actionIdx = 0;
+      for (int i = 0; i < Suggestions.MAX_COUNT && actionIdx < actionLabels.length; i++)
+      {
+        if (_items[i] == null)
+        {
+          _items[i] = actionLabels[actionIdx];
+          _item_types[i] = actionTypes[actionIdx];
+          actionIdx++;
         }
       }
     }
@@ -155,6 +194,7 @@ public class CandidatesView extends LinearLayout
     for (int i = 0; i < _item_views.length; i++)
     {
       _items[i] = null;
+      _item_types[i] = ItemType.NORMAL;
       _item_views[i].setVisibility(View.GONE);
     }
   }
@@ -223,10 +263,27 @@ public class CandidatesView extends LinearLayout
           {
             String it = _items[item_index];
             if (it == null) return;
-            if (item_index == _clipboard_item_index)
+            ItemType type = _item_types[item_index];
+            if (type == ItemType.CLIPBOARD)
+            {
               send_suggestion_text(it);
+            }
+            else if (type == ItemType.PASTE)
+            {
+              Config.globalConfig().handler.handle_editing_key(KeyValue.Editing.PASTE);
+            }
+            else if (type == ItemType.UNDO)
+            {
+              Config.globalConfig().handler.handle_editing_key(KeyValue.Editing.UNDO);
+            }
+            else if (type == ItemType.REDO)
+            {
+              Config.globalConfig().handler.handle_editing_key(KeyValue.Editing.REDO);
+            }
             else
+            {
               Config.globalConfig().handler.suggestion_entered(it);
+            }
           }
         });
     v.setVisibility(View.GONE);
@@ -242,11 +299,8 @@ public class CandidatesView extends LinearLayout
             @Override
             public void onClick(View _v)
             {
-              ClipboardHistoryService srv = ClipboardHistoryService.get_service(getContext());
-              if (srv == null) return;
-              List<String> history = srv.clear_expired_and_get_history();
-              if (history.isEmpty()) return;
-              send_suggestion_text(history.get(0));
+              if (_clipboard_button_click_listener != null)
+                _clipboard_button_click_listener.onClipboardButtonClick();
             }
           });
     // Listen for clipboard changes to capture recently copied text.

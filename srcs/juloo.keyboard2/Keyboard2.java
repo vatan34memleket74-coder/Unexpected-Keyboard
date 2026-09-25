@@ -51,6 +51,7 @@ public class Keyboard2 extends InputMethodService
   private ViewGroup _clipboard_pane = null;
   private Handler _handler;
   private Config _config;
+  private Receiver _receiver;
   private FoldStateTracker _foldStateTracker;
   /** Layout currently visible before it has been modified. */
   KeyboardData current_layout_unmodified()
@@ -125,6 +126,7 @@ public class Keyboard2 extends InputMethodService
         _foldStateTracker.isUnfolded(), _dictionaries);
     _config = Config.globalConfig();
     Receiver recvr = this.new Receiver();
+    _receiver = recvr;
     _suggestions = new Suggestions(recvr, _config);
     _keyeventhandler = new KeyEventHandler(recvr, _suggestions);
     KeyValue.Stateful._handler = recvr;
@@ -141,6 +143,14 @@ public class Keyboard2 extends InputMethodService
     super.onDestroy();
     _foldStateTracker.close();
   }
+
+  /** Handle a key event from the candidates view (e.g., clipboard button). */
+  void handleEvent(KeyValue.Event ev)
+  {
+    if (_receiver != null)
+      _receiver.handle_event_key(ev);
+  }
+
   private void create_keyboard_view()
   {
     _keyboard_container_view = (ViewGroup)inflate_view(R.layout.keyboard);
@@ -196,6 +206,7 @@ public class Keyboard2 extends InputMethodService
     if (should_show)
     {
       _candidates_view.refresh_config(_config);
+      _candidates_view.setOnClipboardButtonClickListener(() -> handleEvent(KeyValue.Event.SWITCH_CLIPBOARD));
       _keyeventhandler.dictionary_changed();
     }
     _candidates_view.setVisibility(should_show ? View.VISIBLE : View.GONE);

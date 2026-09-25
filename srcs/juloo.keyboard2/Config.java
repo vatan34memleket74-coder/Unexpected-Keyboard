@@ -342,6 +342,7 @@ public final class Config
     public void key_up(KeyValue value, Pointers.Modifiers mods);
     public void mods_changed(Pointers.Modifiers mods);
     public void suggestion_entered(String text);
+    public void handle_editing_key(KeyValue.Editing ev);
   }
 
   /** Config migrations. */
